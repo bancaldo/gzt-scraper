@@ -1,0 +1,6 @@
+*.pyc
+*.zip
+*.csv
+*.txt
+.idea
+players.db
