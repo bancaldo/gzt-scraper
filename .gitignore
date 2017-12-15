@@ -2,5 +2,6 @@
 *.zip
 *.csv
 *.txt
+*.json
 .idea
 players.db

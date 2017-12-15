@@ -189,10 +189,13 @@ class Controller(object):
         if self.gazzetta_path in os.listdir(os.getcwd()):
             print "INFO: old gazzetta json file found, deleting..."
             os.remove(self.gazzetta_path)
-        print "INFO: 'gazzetta' spider run to catch evaluations"
+        self.view.set_status_text("INFO: running 'gazzetta' spider...")
         # run spider to extract all evaluations
+        self.view.set_range(2)
+        self.view.set_progress(1)
         self._run_evaluations_spider(day)
         self.write_mcc_file(day)
+        self.view.set_progress(2)
 
     @staticmethod
     def generate_dict_from_json_file(path):
@@ -238,7 +241,11 @@ class Controller(object):
             f_tq = open(output_file_tq, "w")
             f__no_tq = open(output_file_no_tq, "w")
             print "[INFO] Generating MCC string..."
+            self.view.set_range(len(self.get_players()))
+            self.view.set_progress(0)
+            count = 1
             for code in sorted(json_dict.keys()):
+                self.view.set_progress(count)
                 print "INFO: elaborating code %s..." % code
                 data = json_dict.get(code)
                 player = self.get_player_by_code(code)
@@ -265,6 +272,7 @@ class Controller(object):
                                                             fv_no_tq, v, q)
                 f_tq.write(string)
                 f__no_tq.write(string_no_tq)
+                count += 1
                    
             f_tq.close()
             f__no_tq.close()

@@ -6,8 +6,7 @@ from player import ViewPlayer
 
 OK = wx.OK | wx.ICON_EXCLAMATION
 ACV = wx.ALIGN_CENTER_VERTICAL
-STYLE = wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.RESIZE_BORDER | \
-    wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN
+YN = wx.YES_NO | wx.ICON_WARNING
 
 
 class AutoWidthListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
@@ -21,9 +20,13 @@ class Core(wx.Frame):
         super(Core, self).__init__(parent=parent, title=title)
         self.parent = parent
         self.controller = controller
-        self.sub_view = None
+        self.child = None
         self.panel = Panel(self)
         self.panel.SetBackgroundColour('LightGray')
+        self.status_bar = self.CreateStatusBar(2)
+        self.status_bar.SetStatusWidths([200, -1])
+        gauge_pos, gauge_size = self.get_gauge_dimensions()
+        self.gauge = wx.Gauge(self.status_bar, -1, 100, gauge_pos, gauge_size)
         # Menues
         self.menubar = wx.MenuBar()
         self.SetMenuBar(self.menubar)
@@ -40,7 +43,8 @@ class Core(wx.Frame):
                                                    "extract evaluations")
         # Bindings
         # player bindings
-        self.Bind(wx.EVT_MENU, self.new_player, self.menu_new_player)
+        self.Bind(wx.EVT_SIZE, self.on_size)
+        self.Bind(wx.EVT_MENU, self.on_new_player, self.menu_new_player)
         self.Bind(wx.EVT_MENU, self.on_import, self.menu_players_import)
         self.Bind(wx.EVT_MENU, self.on_extract, self.menu_evaluations)
         self.Bind(wx.EVT_BUTTON, self.quit, self.panel.btn_quit)
@@ -52,9 +56,9 @@ class Core(wx.Frame):
         players = self.controller.get_players()
         if players:
             self.fill_players(players)
-            self.panel.status.SetLabel('Players on database: %s' % len(players))
+            self.set_status_text('Players on database: %s' % len(players))
         else:
-            self.panel.status.SetLabel('No Players on database')
+            self.set_status_text('No Players on database')
 
         size = (450, 500)
         self.SetSize(size)
@@ -66,12 +70,12 @@ class Core(wx.Frame):
 
     # noinspection PyUnusedLocal
     def on_extract(self, event):
-        view_extract = ViewExtract(parent=self, title="extract evaluations")
+        self.child = ViewExtract(parent=self, title="extract evaluations")
+        self.show_child()
 
     # noinspection PyUnusedLocal
     def on_import(self, event):
-        choice = wx.MessageBox('Deleting All Players?', 'warning',
-                               wx.YES_NO | wx.ICON_WARNING)
+        choice = wx.MessageBox('Deleting All Players?', 'warning', YN)
         if choice == wx.YES:
             self.controller.delete_all_players()
             self.controller.import_players()
@@ -79,25 +83,17 @@ class Core(wx.Frame):
             players = self.controller.get_players()
             self.fill_players(players)
 
-    def set_progress(self, count):
-        self.panel.status.set_progress(count)
-        self.panel.status.SetLabel('elaborating %s' % count)
-        wx.MicroSleep(5)
-
-    def set_range(self, max_limit):
-        self.panel.status.set_range(max_limit)
-
     # noinspection PyUnusedLocal
     def edit_player(self, event):
         self.Disable()
         ViewPlayer(parent=self, title='Edit Player', is_editor=True)
 
     # noinspection PyUnusedLocal
-    def new_player(self, event):
-        self.Disable()
-        ViewPlayer(parent=self, title='New Player')
+    def on_new_player(self, event):
+        self.child = ViewPlayer(parent=self, title='New Player')
+        self.show_child()
 
-# noinspection PyUnusedLocal
+    # noinspection PyUnusedLocal
     def on_quit(self, event):
         self.Destroy()
 
@@ -147,23 +143,68 @@ class Core(wx.Frame):
     def show_message(string):
         wx.MessageBox(string, 'core info', wx.OK | wx.ICON_EXCLAMATION)
 
-    @staticmethod
-    def show_subframe(child):
-        child.Centre()
-        child.Show()
+    def show_child(self):
+        self.Disable()
+        self.child.Centre()
+        self.child.Show()
 
-    def quit_subframe(self, event):
-        subframe = event.GetEventObject().GetParent()
-        if isinstance(subframe, wx.Panel):
-            subframe = subframe.GetParent()
+    # noinspection PyUnusedLocal
+    def quit_child(self, event):
         self.Enable()
-        subframe.Destroy()
+        self.child.Destroy()
+
+    def get_gauge_dimensions(self):
+        """
+        get_gauge_dimensions(self) -> tuple_a, tuple_b
+
+        tuple_a is a tuple with x position and y position of seconf field
+        of the StatusBar
+        """
+        pos_x, pos_y, dim_x, dim_y = self.status_bar.GetFieldRect(1)
+        return (pos_x, pos_y), (dim_x, dim_y)
+
+    def on_size(self, event):
+        """
+        on_size()
+
+        it redraws the gauge rectangle and repositions when frame windows is
+        resized
+        """
+        size = self.GetSize()
+        self.SetSize(size)
+        gauge_pos, gauge_size = self.get_gauge_dimensions()
+        self.gauge.SetSize(gauge_size)
+        event.Skip()
+        self.Update()
+
+    def set_range(self, value):
+        """
+        set_range(value)
+
+        It sets the maximum value of gauge widget
+        """
+        self.gauge.SetRange(value)
+
+    def set_progress(self, value):
+        """
+        set_progress(value)
+
+        It sets the actual progress value to gauge widget
+        """
+        self.gauge.SetValue(value)
+
+    def set_status_text(self, value):
+        """
+        set_status_text(value)
+
+        It sets the text to the first field of StatusBar
+        """
+        self.status_bar.SetStatusText(value)
 
 
 class Panel(wx.Panel):
     def __init__(self, parent):
         super(Panel, self).__init__(parent=parent)
-        self.status = ProgressStatusBar(self)
         self.players = AutoWidthListCtrl(self)
         self.players.InsertColumn(0, 'code', wx.LIST_FORMAT_RIGHT, 50)
         self.players.InsertColumn(1, 'name', width=125)
@@ -180,113 +221,21 @@ class Panel(wx.Panel):
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(players_box, 1, wx.EXPAND | wx.ALL, 5)
         sizer.Add(btn_sizer, 0, wx.EXPAND | wx.ALL, 5)
-        sizer.Add(self.status, 0, wx.EXPAND | wx.ALL, 5)
         self.SetSizer(sizer)
-
-
-class ProgressStatusBar(wx.StatusBar):
-    """Custom StatusBar with a built-in progress bar"""
-    def __init__(self, parent, id_=wx.ID_ANY, style=wx.SB_FLAT,
-                 name='ProgressStatusBar'):
-        super(ProgressStatusBar, self).__init__(parent, id_, style, name)
-        self._changed = False
-        self.busy = False
-        self.timer = wx.Timer(self)
-        self.progress_bar = wx.Gauge(self, style=wx.GA_HORIZONTAL)
-        self.progress_bar.Hide()
-
-        self.SetFieldsCount(2)
-        self.SetStatusWidths([-1, 155])
-        # self.SetBackgroundColour('Pink')
-
-        self.Bind(wx.EVT_IDLE, lambda evt: self.__reposition())
-        self.Bind(wx.EVT_TIMER, self.on_timer)
-        self.Bind(wx.EVT_SIZE, self.on_size)
-
-    def __del__(self):
-        if self.timer.IsRunning():
-            self.timer.Stop()
-
-    def __reposition(self):
-        """Repositions the gauge as necessary"""
-        if self._changed:
-            field = self.GetFieldsCount() - 1
-            rect = self.GetFieldRect(field)
-            progress_bar_pos = (rect.x + 2, rect.y + 2)
-            self.progress_bar.SetPosition(progress_bar_pos)
-            progress_bar_size = (rect.width - 8, rect.height - 4)
-            self.progress_bar.SetSize(progress_bar_size)
-        self._changed = False
-
-    # noinspection PyUnusedLocal
-    def on_size(self, evt):
-        self._changed = True
-        self.__reposition()
-        evt.Skip()
-
-    # noinspection PyUnusedLocal
-    def on_timer(self, evt):
-        if not self.progress_bar.IsShown():
-            self.timer.Stop()
-        if self.busy:
-            self.progress_bar.Pulse()
-
-    def run(self, rate=100):
-        if not self.timer.IsRunning():
-            self.timer.Start(rate)
-
-    def get_progress(self):
-        return self.progress_bar.GetValue()
-
-    def set_progress(self, val):
-        if not self.progress_bar.IsShown():
-            self.show_progress(True)
-
-        if val == self.progress_bar.GetRange():
-            self.progress_bar.SetValue(0)
-            self.show_progress(False)
-        else:
-            self.progress_bar.SetValue(val)
-
-    def set_range(self, val):
-        if val != self.progress_bar.GetRange():
-            self.progress_bar.SetRange(val)
-
-    def show_progress(self, show=True):
-        self.__reposition()
-        self.progress_bar.Show(show)
-
-    def start_busy(self, rate=100):
-        self.busy = True
-        self.__reposition()
-        self.show_progress(True)
-        if not self.timer.IsRunning():
-            self.timer.Start(rate)
-
-    def stop_busy(self):
-        self.timer.Stop()
-        self.show_progress(False)
-        self.progress_bar.SetValue(0)
-        self.busy = False
-
-    def is_busy(self):
-        return self.busy
 
 
 class ViewExtract(wx.Frame):
     def __init__(self, parent, title):
         self.parent = parent
         self.title = title
-        super(ViewExtract, self).__init__(parent=self.parent, title=title,
-                                          style=STYLE)
+        super(ViewExtract, self).__init__(parent=self.parent, title=title)
         self.controller = self.parent.controller
         self.panel = PanelExtract(parent=self)
         self.SetSize((300, 150))
         # bindings
-        self.Bind(wx.EVT_BUTTON, self.parent.quit_subframe, self.panel.btn_quit)
+        self.Bind(wx.EVT_CLOSE, self.parent.quit_child)
+        self.Bind(wx.EVT_BUTTON, self.parent.quit_child, self.panel.btn_quit)
         self.Bind(wx.EVT_BUTTON, self.on_extract, self.panel.btn_extract)
-
-        self.parent.show_subframe(self)  # Show and center the frame
 
     # noinspection PyUnusedLocal
     def on_extract(self, event):

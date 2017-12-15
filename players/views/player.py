@@ -1,14 +1,9 @@
 import wx
 
 
-STYLE = wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.RESIZE_BORDER | \
-        wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN
 OK = wx.OK | wx.ICON_EXCLAMATION
 ACV = wx.ALIGN_CENTER_VERTICAL
-ACH = wx.ALIGN_CENTER_HORIZONTAL | wx.ALL
 YN = wx.YES_NO | wx.ICON_WARNING
-DD = wx.CB_DROPDOWN
-HS = wx.LB_HSCROLL
 
 
 class ViewPlayer(wx.Frame):
@@ -16,18 +11,16 @@ class ViewPlayer(wx.Frame):
         self.parent = parent
         self.title = title
         self.is_editor = is_editor
-        super(ViewPlayer, self).__init__(parent=self.parent, title=title,
-                                         style=STYLE)
+        super(ViewPlayer, self).__init__(parent=self.parent, title=title)
         self.controller = self.parent.controller
         self.panel = PanelPlayer(parent=self)
         self.panel.btn_delete.Disable()
-        self.SetSize((350, 150))
+        self.SetSize((350, 250))
         # bindings
-        self.Bind(wx.EVT_BUTTON, self.parent.quit_subframe, self.panel.btn_quit)
+        self.Bind(wx.EVT_CLOSE, self.parent.quit_child)
+        self.Bind(wx.EVT_BUTTON, self.parent.quit_child, self.panel.btn_quit)
         self.Bind(wx.EVT_BUTTON, self.on_save, self.panel.btn_save)
         self.Bind(wx.EVT_BUTTON, self.delete_player, self.panel.btn_delete)
-
-        self.parent.show_subframe(self)  # Show and center the frame
 
     # noinspection PyUnusedLocal
     def on_save(self, event):
@@ -51,8 +44,7 @@ class ViewPlayer(wx.Frame):
 
     # noinspection PyUnusedLocal
     def delete_player(self, event):
-        choice = wx.MessageBox('Deleting player...are you sure?', 'warning',
-                               wx.YES_NO | wx.ICON_WARNING)
+        choice = wx.MessageBox('Deleting player...are you sure?', 'warning', YN)
         if choice == wx.YES:
             code = self.panel.code.GetValue()
             self.controller.delete_player(code)
@@ -81,7 +73,7 @@ class ViewPlayer(wx.Frame):
 
     @staticmethod
     def show_message(string):
-        wx.MessageBox(string, 'core info', wx.OK | wx.ICON_EXCLAMATION)
+        wx.MessageBox(string, 'core info', OK)
 
 
 class PanelPlayer(wx.Panel):
@@ -91,17 +83,13 @@ class PanelPlayer(wx.Panel):
         self.code = wx.TextCtrl(self)
         self.name = wx.TextCtrl(self)
         self.fullname = wx.TextCtrl(self)
-
         # Layout
         text_sizer = wx.FlexGridSizer(rows=3, cols=2, hgap=5, vgap=5)
-        text_sizer.Add(wx.StaticText(self, label="Player Code:"),
-                       0, wx.ALIGN_CENTER_VERTICAL)
+        text_sizer.Add(wx.StaticText(self, label="Player Code:"), 0, ACV)
         text_sizer.Add(self.code, 0, wx.EXPAND)
-        text_sizer.Add(wx.StaticText(self, label="Player Name:"),
-                       0, wx.ALIGN_CENTER_VERTICAL)
+        text_sizer.Add(wx.StaticText(self, label="Player Name:"), 0, ACV)
         text_sizer.Add(self.name, 0, wx.EXPAND)
-        text_sizer.Add(wx.StaticText(self, label="Player full name:"),
-                       0, wx.ALIGN_CENTER_VERTICAL)
+        text_sizer.Add(wx.StaticText(self, label="Player full name:"), 0, ACV)
         text_sizer.Add(self.fullname, 0, wx.EXPAND)
         text_sizer.AddGrowableCol(1)
 
@@ -110,9 +98,9 @@ class PanelPlayer(wx.Panel):
         self.btn_delete = wx.Button(self, wx.ID_DELETE)
         self.btn_quit = wx.Button(self, wx.ID_CANCEL, label="Quit")
         self.btn_quit.SetDefault()
-        button_sizer.Add(self.btn_save, 0, wx.ALIGN_CENTER_VERTICAL)
-        button_sizer.Add(self.btn_delete, 0, wx.ALIGN_CENTER_VERTICAL)
-        button_sizer.Add(self.btn_quit, 0, wx.ALIGN_CENTER_VERTICAL)
+        button_sizer.Add(self.btn_save, 0, ACV)
+        button_sizer.Add(self.btn_delete, 0, ACV)
+        button_sizer.Add(self.btn_quit, 0, ACV)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(text_sizer, 1, wx.EXPAND | wx.ALL, 5)
         sizer.Add(button_sizer, 0, wx.ALIGN_CENTER | wx.ALL, 5)
