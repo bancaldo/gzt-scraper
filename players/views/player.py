@@ -17,10 +17,15 @@ class ViewPlayer(wx.Frame):
         self.panel.btn_delete.Disable()
         self.SetSize((350, 250))
         # bindings
-        self.Bind(wx.EVT_CLOSE, self.parent.quit_child)
-        self.Bind(wx.EVT_BUTTON, self.parent.quit_child, self.panel.btn_quit)
+        self.Bind(wx.EVT_CLOSE, self.on_quit)
+        self.Bind(wx.EVT_BUTTON, self.on_quit, self.panel.btn_quit)
         self.Bind(wx.EVT_BUTTON, self.on_save, self.panel.btn_save)
         self.Bind(wx.EVT_BUTTON, self.delete_player, self.panel.btn_delete)
+
+    # noinspection PyUnusedLocal
+    def on_quit(self, event):
+        self.parent.Enable()
+        self.Destroy()
 
     # noinspection PyUnusedLocal
     def on_save(self, event):

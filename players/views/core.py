@@ -148,11 +148,6 @@ class Core(wx.Frame):
         self.child.Centre()
         self.child.Show()
 
-    # noinspection PyUnusedLocal
-    def quit_child(self, event):
-        self.Enable()
-        self.child.Destroy()
-
     def get_gauge_dimensions(self):
         """
         get_gauge_dimensions(self) -> tuple_a, tuple_b
@@ -233,8 +228,8 @@ class ViewExtract(wx.Frame):
         self.panel = PanelExtract(parent=self)
         self.SetSize((300, 150))
         # bindings
-        self.Bind(wx.EVT_CLOSE, self.parent.quit_child)
-        self.Bind(wx.EVT_BUTTON, self.parent.quit_child, self.panel.btn_quit)
+        self.Bind(wx.EVT_CLOSE, self.on_quit)
+        self.Bind(wx.EVT_BUTTON, self.on_quit, self.panel.btn_quit)
         self.Bind(wx.EVT_BUTTON, self.on_extract, self.panel.btn_extract)
 
     # noinspection PyUnusedLocal
@@ -248,6 +243,11 @@ class ViewExtract(wx.Frame):
                 wx.MessageBox('Evaluations for day %s not ready!' % day, '', OK)
         else:
             wx.MessageBox('Please set a day to extract!', '', OK)
+
+    # noinspection PyUnusedLocal
+    def on_quit(self, event):
+        self.parent.Enable()
+        self.Destroy()
 
 
 class PanelExtract(wx.Panel):
