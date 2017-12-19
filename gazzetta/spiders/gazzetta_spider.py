@@ -33,6 +33,7 @@ class GazzettaSpider(scrapy.Spider):
         def extract_with_css(query, ev_day):
             return [q.css(query).extract_first()
                     for q in response.css('li.day-%s' % ev_day)][0]
+        error_file = open("ERROR.txt", "w")
         player_item = response.meta.get('player_item')
         day = player_item.get('day')
         link = player_item.get('link')
@@ -41,13 +42,18 @@ class GazzettaSpider(scrapy.Spider):
         code = name_code.split('_')[-1]
         team = response.css(
             'div.category-title-column a::attr(href)').extract_first()
-        yield {'code': code,
-               'name': name,
-               'team': team,
-               'ruolo': extract_with_css('span.field-role::text', day),
-               'fv': extract_with_css('span.field-fv::text', day),
-               'v': extract_with_css('span.field-v::text', day),
-               'gol': extract_with_css('span.field-g::text', day).strip(),
-               'q': response.css('span.field-q::text').extract()[1],
-               'link': link, 
-               }
+        try:
+            yield {'code': code,
+                   'name': name,
+                   'team': team,
+                   'ruolo': extract_with_css('span.field-role::text', day),
+                   'fv': extract_with_css('span.field-fv::text', day),
+                   'v': extract_with_css('span.field-v::text', day),
+                   'gol': extract_with_css('span.field-g::text', day).strip(),
+                   'q': response.css('span.field-q::text').extract()[1],
+                   'link': link,
+                   }
+        except IndexError:
+            print "ERROR: No data for ", link
+            error_file.write("No data for %s" % link)
+        error_file.close()
