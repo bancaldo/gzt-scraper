@@ -114,6 +114,7 @@ class Core(wx.Frame):
         item_fullname = self.panel.players.GetItem(item_id, 2)
         player_fullname = item_fullname.GetText()
         view_edit = ViewPlayer(self, "Edit player", is_editor=True)
+        view_edit.Show()
         view_edit.panel.code.SetValue(player_code)
         view_edit.panel.name.SetValue(player_name)
         view_edit.panel.fullname.SetValue(player_fullname)
@@ -238,6 +239,7 @@ class ViewExtract(wx.Frame):
         if day:
             if self.controller.are_evaluations_ready(day):
                 self.controller.extract_evaluations(day)
+                self.parent.Enable()
                 self.Destroy()
             else:
                 wx.MessageBox('Evaluations for day %s not ready!' % day, '', OK)
