@@ -44,7 +44,7 @@ class ViewPlayer(wx.Frame):
             self.show_message("WARNING: You have to fill 'name' field")
         else:
             fullname = self.panel.fullname.GetValue()
-            self.controller.new_player(code, name, fullname)
+            self.controller.save_player(code, name, fullname)
             self.clear_text_controls()
 
     # noinspection PyUnusedLocal
